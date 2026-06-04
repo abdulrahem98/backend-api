@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 import sqlite3
-import os
 
 app = FastAPI()
 
@@ -26,6 +25,20 @@ init_db()
 class Transaction(BaseModel):
     description: str
     amount: float
+
+    @field_validator("description")
+    @classmethod
+    def description_must_not_be_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Description cannot be empty")
+        return v.strip()
+
+    @field_validator("amount")
+    @classmethod
+    def amount_must_be_positive(cls, v):
+        if v <= 0:
+            raise ValueError("Amount must be greater than zero")
+        return v
 
 def categorize(description: str) -> str:
     description = description.upper()
@@ -77,4 +90,3 @@ def get_transaction(tx_id: int):
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
