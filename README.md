@@ -1,11 +1,13 @@
 # Transaction Enrichment API
 
-A production-style REST API built with FastAPI that enriches bank transactions with category data.
+A production-style REST API that enriches bank transactions with category data.
+Built with FastAPI and SQLite.
 
 ## Tech Stack
 - Python 3.9
 - FastAPI
-- Pydantic
+- Pydantic v2
+- SQLite
 - Uvicorn
 
 ## Running Locally
@@ -16,34 +18,57 @@ python -m venv venv
 venv\Scripts\activate
 
 # Install dependencies
-pip install fastapi uvicorn pydantic
+pip install -r requirements.txt
 
 # Run the API
 uvicorn main:app --reload
 ```
 
-## Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | /transactions | Enrich a transaction with category |
+| POST | /transactions | Create and enrich a transaction |
+| GET | /transactions | Get all transactions |
+| GET | /transactions/{id} | Get a single transaction |
+| PUT | /transactions/{id} | Update a transaction |
+| DELETE | /transactions/{id} | Delete a transaction |
 | GET | /health | Health check |
+
+## Auto-categorization
+
+The API automatically categorizes transactions based on description:
+
+| Keyword | Category |
+|---------|----------|
+| AMAZON | Shopping |
+| UBER, CAREEM | Transport |
+| NETFLIX, SPOTIFY | Entertainment |
+| RESTAURANT, CAFE | Food |
+| Everything else | Other |
+
+## Validation
+
+- Description cannot be empty
+- Amount must be greater than zero
+- Returns 404 when transaction not found
 
 ## Example
 
-Send a transaction:
+Request:
 ```json
 {
-  "description": "AMAZON ORDER 123",
-  "amount": 49.99
+  "description": "UBER TRIP CAIRO",
+  "amount": 85.50
 }
 ```
 
-Get back enriched data:
+Response:
 ```json
 {
-  "description": "AMAZON ORDER 123",
-  "amount": 49.99,
-  "category": "Shopping"
+  "id": 1,
+  "description": "UBER TRIP CAIRO",
+  "amount": 85.5,
+  "category": "Transport"
 }
 ```
