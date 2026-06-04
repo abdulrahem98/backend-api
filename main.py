@@ -86,6 +86,34 @@ def get_transaction(tx_id: int):
     if not row:
         raise HTTPException(status_code=404, detail="Transaction not found")
     return {"id": row[0], "description": row[1], "amount": row[2], "category": row[3]}
+@app.put("/transactions/{tx_id}")
+def update_transaction(tx_id: int, tx: Transaction):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM transactions WHERE id = ?", (tx_id,))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    category = categorize(tx.description)
+    cursor.execute(
+        "UPDATE transactions SET description = ?, amount = ?, category = ? WHERE id = ?",
+        (tx.description, tx.amount, category, tx_id)
+    )
+    conn.commit()
+    conn.close()
+    return {"id": tx_id, "description": tx.description, "amount": tx.amount, "category": category}
+
+@app.delete("/transactions/{tx_id}", status_code=204)
+def delete_transaction(tx_id: int):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM transactions WHERE id = ?", (tx_id,))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    cursor.execute("DELETE FROM transactions WHERE id = ?", (tx_id,))
+    conn.commit()
+    conn.close()
 
 @app.get("/health")
 def health():
