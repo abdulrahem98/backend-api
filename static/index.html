@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Finance Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0f; color: #e8e8f0; }
+        .header { background: #12121f; border-bottom: 1px solid #1e1e35; padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .header h1 { font-size: 20px; font-weight: 700; }
+        .header span { color: #ff2d78; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .month-select { padding: 8px 14px; background: #0a0a0f; border: 1px solid #2a2a45; border-radius: 8px; color: #e8e8f0; font-size: 13px; outline: none; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 32px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .card { background: #12121f; border: 1px solid #1e1e35; border-radius: 12px; padding: 24px; }
+        .card h2 { font-size: 14px; color: #888899; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; color: #888899; margin-bottom: 6px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 14px; background: #0a0a0f; border: 1px solid #2a2a45; border-radius: 8px; color: #e8e8f0; font-size: 14px; outline: none; }
+        .form-group input:focus, .form-group select:focus { border-color: #ff2d78; }
+        .btn { width: 100%; padding: 12px; background: #ff2d78; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
+        .btn:hover { background: #e0265f; }
+        .btn-secondary { background: #1e1e35; border: 1px solid #2a2a45; color: #e8e8f0; }
+        .btn-secondary:hover { background: #2a2a45; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat { background: #12121f; border: 1px solid #1e1e35; border-radius: 12px; padding: 20px; text-align: center; }
+        .stat .value { font-size: 28px; font-weight: 700; color: #ff2d78; }
+        .stat .label { font-size: 12px; color: #888899; margin-top: 4px; }
+        .transactions { background: #12121f; border: 1px solid #1e1e35; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+        .transactions h2 { font-size: 14px; color: #888899; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+        .tx-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1e1e35; }
+        .tx-item:last-child { border-bottom: none; }
+        .tx-desc { font-size: 14px; font-weight: 600; }
+        .tx-meta { font-size: 12px; color: #888899; margin-top: 2px; }
+        .tx-amount { font-size: 16px; font-weight: 700; color: #e8e8f0; }
+        .tx-anomaly { font-size: 11px; color: #ff2d78; margin-top: 2px; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; }
+        .badge-shopping { background: #ff2d7820; color: #ff2d78; }
+        .badge-transport { background: #00d4ff20; color: #00d4ff; }
+        .badge-entertainment { background: #bf5fff20; color: #bf5fff; }
+        .badge-food { background: #ffb80020; color: #ffb800; }
+        .badge-utilities { background: #00ff8820; color: #00ff88; }
+        .badge-healthcare { background: #ff680020; color: #ff6800; }
+        .badge-other { background: #88889920; color: #888899; }
+        .badge-custom { background: #00d4ff20; color: #00d4ff; }
+        .alert { background: #ff2d7815; border: 1px solid #ff2d7840; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #ff2d78; display: none; }
+        .success { background: #00ff8815; border: 1px solid #00ff8840; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #00ff88; display: none; }
+        .budget-card { background: #12121f; border: 1px solid #1e1e35; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+        .budget-card h2 { font-size: 14px; color: #888899; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+        .budget-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+        .budget-row select, .budget-row input { padding: 10px 14px; background: #0a0a0f; border: 1px solid #2a2a45; border-radius: 8px; color: #e8e8f0; font-size: 14px; outline: none; }
+        .budget-row input { flex: 1; }
+        .budget-row button { padding: 10px 20px; background: #ff2d78; border: none; border-radius: 8px; color: white; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .budget-item { margin-bottom: 16px; }
+        .budget-item-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+        .progress-bar { background: #1e1e35; border-radius: 20px; height: 8px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 20px; transition: width 0.3s; }
+        .progress-ok { background: #00ff88; }
+        .progress-warn { background: #ffb800; }
+        .progress-over { background: #ff2d78; }
+        canvas { max-height: 220px; }
+        .filter-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-row input, .filter-row select { padding: 10px 14px; background: #0a0a0f; border: 1px solid #2a2a45; border-radius: 8px; color: #e8e8f0; font-size: 14px; outline: none; }
+        .filter-row input { flex: 1; min-width: 150px; }
+        .divider { border: none; border-top: 1px solid #1e1e35; margin: 16px 0; }
+        .cat-row { display: flex; gap: 8px; }
+        .cat-row input { flex: 1; padding: 10px 14px; background: #0a0a0f; border: 1px solid #2a2a45; border-radius: 8px; color: #e8e8f0; font-size: 14px; outline: none; }
+        .cat-row button { padding: 10px 20px; background: #1e1e35; border: 1px solid #2a2a45; border-radius: 8px; color: #e8e8f0; font-size: 13px; cursor: pointer; }
+        .cat-row button:hover { background: #2a2a45; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <span>Personal Finance</span>
+            <h1>Smart Finance Tracker</h1>
+        </div>
+        <div class="header-right">
+            <select class="month-select" id="month-filter" onchange="changeMonth()">
+                <option value="">All Time</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat">
+                <div class="value" id="total-spent">$0</div>
+                <div class="label">Total Spent</div>
+            </div>
+            <div class="stat">
+                <div class="value" id="total-transactions">0</div>
+                <div class="label">Transactions</div>
+            </div>
+            <div class="stat">
+                <div class="value" id="total-anomalies">0</div>
+                <div class="label">Anomalies Detected</div>
+            </div>
+        </div>
+
+        <!-- Add Transaction + Chart -->
+        <div class="grid">
+            <div class="card">
+                <h2>Add Transaction</h2>
+                <div id="error-alert" class="alert"></div>
+                <div id="success-alert" class="success"></div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="description" placeholder="e.g. AMAZON ORDER" />
+                </div>
+                <div class="form-group">
+                    <label>Amount ($)</label>
+                    <input type="number" id="amount" placeholder="0.00" step="0.01" />
+                </div>
+                <div class="form-group">
+                    <label>Category (optional override)</label>
+                    <select id="category-override">
+                        <option value="">Auto-detect</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="date" />
+                </div>
+                <button class="btn" onclick="addTransaction()">Add Transaction</button>
+
+                <hr class="divider">
+                <p style="font-size:12px;color:#888899;margin-bottom:10px;">Add custom category</p>
+                <div class="cat-row">
+                    <input type="text" id="new-category" placeholder="e.g. Gym, Travel..." />
+                    <button onclick="addCategory()">+ Add</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Spending by Category</h2>
+                <canvas id="chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Budget Limits -->
+        <div class="budget-card">
+            <h2>Monthly Budget Limits</h2>
+            <div class="budget-row">
+                <select id="budget-category"></select>
+                <input type="number" id="budget-amount" placeholder="Budget limit ($)" />
+                <button onclick="setBudget()">Set Budget</button>
+            </div>
+            <div id="budget-list"></div>
+        </div>
+
+        <!-- Transactions -->
+        <div class="transactions">
+            <h2>Recent Transactions</h2>
+            <div class="filter-row">
+                <input type="text" id="search" placeholder="Search transactions..." oninput="filterTransactions()" />
+                <select id="filter-category" onchange="filterTransactions()">
+                    <option value="">All Categories</option>
+                </select>
+                <select id="filter-anomaly" onchange="filterTransactions()">
+                    <option value="">All Transactions</option>
+                    <option value="anomaly">Anomalies Only</option>
+                </select>
+            </div>
+            <div id="transactions-list">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        const API = 'http://127.0.0.1:8000';
+        let allTransactions = [];
+        let budgets = JSON.parse(localStorage.getItem('budgets') || '{}');
+        let chart = null;
+        let currentMonth = '';
+
+        document.getElementById('date').valueAsDate = new Date();
+
+        async function init() {
+            await loadCategories();
+            await loadMonths();
+            await loadTransactions();
+            await loadSummary();
+        }
+
+        async function loadCategories() {
+            const res = await fetch(`${API}/categories`);
+            const cats = await res.json();
+
+            const selectors = ['category-override', 'budget-category', 'filter-category'];
+            selectors.forEach(id => {
+                const el = document.getElementById(id);
+                const defaultOpt = id === 'category-override' ? '<option value="">Auto-detect</option>' 
+                    : id === 'filter-category' ? '<option value="">All Categories</option>' 
+                    : '';
+                el.innerHTML = defaultOpt + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+            });
+        }
+
+        async function loadMonths() {
+            const res = await fetch(`${API}/months`);
+            const months = await res.json();
+            const sel = document.getElementById('month-filter');
+            sel.innerHTML = '<option value="">All Time</option>' + 
+                months.map(m => `<option value="${m}">${m}</option>`).join('');
+        }
+
+        async function changeMonth() {
+            currentMonth = document.getElementById('month-filter').value;
+            await loadTransactions();
+            await loadSummary();
+        }
+
+        async function loadTransactions() {
+            const url = currentMonth ? `${API}/transactions?month=${currentMonth}` : `${API}/transactions`;
+            const res = await fetch(url);
+            allTransactions = await res.json();
+            renderTransactions(allTransactions);
+            updateStats(allTransactions);
+            renderBudgets();
+        }
+
+        async function loadSummary() {
+            const url = currentMonth ? `${API}/summary?month=${currentMonth}` : `${API}/summary`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const labels = Object.keys(data);
+            const values = labels.map(l => data[l].total);
+            const colors = ['#ff2d78','#00d4ff','#bf5fff','#ffb800','#00ff88','#ff6800','#888899','#ff4500','#1e90ff','#32cd32'];
+            if (chart) chart.destroy();
+            if (labels.length === 0) return;
+            const ctx = document.getElementById('chart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels, datasets: [{ data: values, backgroundColor: colors.slice(0, labels.length), borderWidth: 0 }] },
+                options: { plugins: { legend: { labels: { color: '#e8e8f0', font: { size: 12 } } } }, cutout: '65%' }
+            });
+        }
+
+        function filterTransactions() {
+            const search = document.getElementById('search').value.toLowerCase();
+            const category = document.getElementById('filter-category').value;
+            const anomalyFilter = document.getElementById('filter-anomaly').value;
+            let filtered = allTransactions;
+            if (search) filtered = filtered.filter(tx => tx.description.toLowerCase().includes(search));
+            if (category) filtered = filtered.filter(tx => tx.category === category);
+            if (anomalyFilter === 'anomaly') filtered = filtered.filter(tx => tx.is_anomaly);
+            renderTransactions(filtered);
+        }
+
+        function renderTransactions(data) {
+            const list = document.getElementById('transactions-list');
+            if (data.length === 0) {
+                list.innerHTML = '<p style="color:#888899;text-align:center;padding:20px;">No transactions found.</p>';
+                return;
+            }
+            const sorted = [...data].sort((a, b) => b.id - a.id);
+            list.innerHTML = sorted.map(tx => {
+                const badgeClass = `badge-${tx.category.toLowerCase()}`;
+                return `
+                <div class="tx-item">
+                    <div>
+                        <div class="tx-desc">${tx.description} <span class="badge ${badgeClass}">${tx.category}</span></div>
+                        <div class="tx-meta">${tx.date}</div>
+                        ${tx.is_anomaly ? `<div class="tx-anomaly">⚠ ${tx.anomaly_reason}</div>` : ''}
+                    </div>
+                    <div style="text-align:right">
+                        <div class="tx-amount">$${tx.amount.toFixed(2)}</div>
+                        <div style="font-size:11px;color:#444460;cursor:pointer;margin-top:4px;" onclick="deleteTransaction(${tx.id})">Delete</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function updateStats(data) {
+            const total = data.reduce((sum, tx) => sum + tx.amount, 0);
+            const anomalies = data.filter(tx => tx.is_anomaly).length;
+            document.getElementById('total-spent').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('total-transactions').textContent = data.length;
+            document.getElementById('total-anomalies').textContent = anomalies;
+        }
+
+        function setBudget() {
+            const category = document.getElementById('budget-category').value;
+            const amount = parseFloat(document.getElementById('budget-amount').value);
+            if (!amount || amount <= 0) return;
+            budgets[category] = amount;
+            localStorage.setItem('budgets', JSON.stringify(budgets));
+            document.getElementById('budget-amount').value = '';
+            renderBudgets();
+        }
+
+        function renderBudgets() {
+            const list = document.getElementById('budget-list');
+            if (Object.keys(budgets).length === 0) {
+                list.innerHTML = '<p style="color:#888899;font-size:13px;">No budgets set yet.</p>';
+                return;
+            }
+            const spending = {};
+            allTransactions.forEach(tx => {
+                spending[tx.category] = (spending[tx.category] || 0) + tx.amount;
+            });
+            list.innerHTML = Object.entries(budgets).map(([cat, limit]) => {
+                const spent = spending[cat] || 0;
+                const pct = Math.min((spent / limit) * 100, 100);
+                const colorClass = pct >= 100 ? 'progress-over' : pct >= 80 ? 'progress-warn' : 'progress-ok';
+                const overBudget = spent > limit;
+                return `
+                <div class="budget-item">
+                    <div class="budget-item-header">
+                        <span>${cat} ${overBudget ? '⚠ Over budget!' : ''}</span>
+                        <span style="color:${overBudget ? '#ff2d78' : '#888899'}">$${spent.toFixed(2)} / $${limit.toFixed(2)}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${colorClass}" style="width:${pct}%"></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function addCategory() {
+            const input = document.getElementById('new-category');
+            const name = input.value.trim();
+            if (!name) return;
+            const res = await fetch(`${API}/categories`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            if (res.ok) {
+                input.value = '';
+                await loadCategories();
+                showSuccess(`Category "${name}" added successfully`);
+            } else {
+                const err = await res.json();
+                showError(err.detail);
+            }
+        }
+
+        async function addTransaction() {
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const date = document.getElementById('date').value;
+            const categoryOverride = document.getElementById('category-override').value;
+            const alertEl = document.getElementById('error-alert');
+
+            if (!description || !amount || !date) {
+                showError('Please fill in all fields.');
+                return;
+            }
+
+            const body = { description, amount, date,
+                category_override: categoryOverride
+             };
+
+            const res = await fetch(`${API}/transactions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('description').value = '';
+                document.getElementById('amount').value = '';
+                if (data.anomaly.is_anomaly) {
+                    showError(`⚠ Anomaly detected: ${data.anomaly.reason}`);
+                } else {
+                    showSuccess('Transaction added successfully');
+                }
+                await loadTransactions();
+                await loadSummary();
+                await loadMonths();
+            }
+        }
+
+        async function deleteTransaction(id) {
+            await fetch(`${API}/transactions/${id}`, { method: 'DELETE' });
+            await loadTransactions();
+            await loadSummary();
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-alert');
+            const ok = document.getElementById('success-alert');
+            ok.style.display = 'none';
+            el.style.display = 'block';
+            el.textContent = msg;
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('success-alert');
+            const err = document.getElementById('error-alert');
+            err.style.display = 'none';
+            el.style.display = 'block';
+            el.textContent = msg;
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
