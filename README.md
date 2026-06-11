@@ -1,4 +1,5 @@
 # Transaction Enrichment API
+🌐 **Live Demo:** https://web-production-da9a9.up.railway.app
 
 A production-style REST API that enriches bank transactions with category data.
 Built with FastAPI and SQLite.
